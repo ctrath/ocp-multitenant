@@ -26,6 +26,50 @@ To view that a project exists:
 oc get namespace my-project
 ```
 
+#### Project Resource Quotas
+
+In order to prevent a tenant from consuming too many system resources and affecting other tenants in the cluster, it's a good idea to set resource quotas and limits for each tenant project.  There are 3 main types of resources in which quotas can be set: compute, Kubernetes objects, storage.  And, with that, a LimitRange can also be specified for each specified resource.  Note, a few examples are provided in this docoument, for further details and examples, please follow the links at the end of this document:
+
+
+Compute resource quota example:
+```
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-resources
+  namespace: my-project
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    requests.ephemeral-storage: 4Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    limits.ephemeral-storage: 4Gi
+```
+
+The above will set hard limits in the `my-project` namespace.  Requests are what the container is guaranteed to get. If a container requests a resource, Kubernetes will only schedule it on a node that can give it that resource. Limits, on the other hand, make sure a container never goes above a certain value.  With multiple tenants, it is advisable to have hard compute resource limits set for each tenant namespace.
+
+
+Kubernetes objects quota example:
+```
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: core-object-counts
+  namespace: my-project
+spec:
+  hard:
+    configmaps: "10" 
+    persistentvolumeclaims: "4" 
+    replicationcontrollers: "20" 
+    secrets: "10" 
+    services: "10" 
+```
+
+The above will set a quota on the number of resources that can be created in the `my-project` namespace.  If you have only a few tenants in a cluster, it may not be necessary to set any of these quotas.  Where it may become necessary is if there is a large number of tenants and cluster performance is degraded and/or Kubernetes master resource consumption is too high for the cluster.
+
+
 ### Role-based access control (RBAC)
 
 In order to grant privileges to users, you must first invite a user to access your cluster.  In the Openshift web console, click the `IAM#<user>` menu on the top right of the screen and select `Manage IAM/RBAC`, then click the blue `Invite Users` button.  At the next window, enter the e-mail address for the users you want to invite to the cluster, and click the blue `Invite` button on the right-hand of the screen.  You do not need to assign any additional access groups unless you want the user to have additional permissions other than access to a given namespace in the cluster and its resources.
@@ -85,6 +129,7 @@ Redhat Openshift Service Mesh is based on Istio and is configured in a very simi
 
 ### References
 - [Openshift Multitenancy Tutorial](https://developer.ibm.com/tutorials/multitenancy-and-role-based-access-control/)
+- [Redhat Openshift Resource Quotas](https://docs.openshift.com/online/pro/dev_guide/compute_resources.html)
 - [Redhat Openshift Service Mesh](https://cloud.redhat.com/learn/topics/service-mesh)
 - [Istio](https://istio.io/latest/about/service-mesh/)
 - [Network policies](https://loft.sh/blog/kubernetes-network-policies-for-isolating-namespaces/)
